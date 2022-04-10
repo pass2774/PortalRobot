@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <title>Realtime communication with WebRTC</title>
+
+  <link rel="stylesheet" href="/css/main.css" />
+
+</head>
+
+<body>
+  <h1><a href="index.html">Realtime communication with WebRTC</a></h1>
+  <ol>
+    <li><a href="1.html">HTML</a></li>
+    <li><a href="2.html">CSS</a></li>
+    <li><a href="3.html">JavaScript</a></li>
+    <li><a href="SensorMonitor.html">Timeseries SensorMonitor</a></li>
+    <li><a href="SensorMonitor.html">Polarization</a></li>
+    <li><a href="SensorMonitor.html">Cyclic Voltammetry</a></li>
+    <li><a href="SensorMonitor.html">Potential Generator</a></li>
+    <li><a href="SensorMonitor.html">WebCAM</a></li>
+    
+  
+
+  <div id="videos">
+    <video id="localVideo" autoplay muted playsinline></video>
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
+
+  <!-- This file is automatically added/served when running "node index.js". -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script src="js/main2.js" defer></script>
+  <script src="js/ui.js"></script>
+  <!-- <script src="js/clientTest.js"></script> -->
+
+<!-- 
+  <select class="deviceList" onchange="handleOnFieldParamChange(this)">
+    <option value="Field">Available Device List</option>
+  </select> -->
+
+  <div id="controlPanel">
+    <h2 style="background-color:lightgrey; color:white; text-align:center">Control Panel</h2>
+    <div id="mainPanel">
+        <input type="text" id="input_DeviceID" placeholder="android_test(default)">
+        <button onclick="input_DeviceID()">Apply</button><br>
+        <div id="field_params">
+            <span style="display:inline-block; text-align:center ;width:80px; margin: 5px; background-color:#eaeafa" name='fieldIdx'>Field index</span>
+            <span style="display:inline-block; text-align:center ;width:100px; margin: 5px; background-color:#eaeafa" name='fieldName'>Field Name</span>
+            <select name="graphIdx" onchange="handleOnFieldParamChange(this)">
+              <option value="graph_1">Graph 1</option>
+              <option value="graph_2">Graph 2</option>
+              <option value="graph_3">Graph 3</option>
+            </select>
+          </div>
+    </div>
+  </div>
+  <div id="image">
+    <img src="coding.jpg" width="100%">
+    <p>
+      The World Wide Web (abbreviated WWW or the Web) is an information space where documents and other web resources are identified by Uniform Resource Locators (URLs), interlinked by hypertext links, and can be accessed via the Internet.[1] English scientist Tim Berners-Lee invented the World Wide Web in 1989. He wrote the first web browser computer program in 1990 while employed at CERN in Switzerland.[2][3] The Web browser was released outside of CERN in 1991, first to other research institutions starting in January 1991 and to the general public on the Internet in August 1991.
+    </p>  
+  </div>
+
+  <script type="text/javascript">
+    function handleOnFieldParamChange(e) {
+        // 선택된 데이터 가져오기
+        // const value = e.value;
+        // var i=1;
+        // var field_params=document.getElementById("field_params_"+string(i))          ;
+      
+        var field_params=e.parentNode.id;
+        field_idx=Number(field_params.split("_")[1]);
+        console.log("field idx=");
+        console.log(field_idx);
+        if(e.name=="graphIdx"){
+            console.log("graph moved to=");
+            console.log(e.value);
+        }
+        if(e.name=="YaxisIdx"){
+            console.log("y axis moved to=");
+            console.log(e.value);
+        }
+    }
+
+    // var jbBtn = document.createElement('button');
+    // var jbBtnText = document.createTextNode('Click me!');
+    // jbBtn.id='btn_0'
+    // jbBtnText.id='btnText_0'
+
+    // jbBtn.appendChild(jbBtnText);
+    // document.body.appendChild(jbBtn);
+    // // jbBtn.addEventListener('StreamOn');
+
+    // // jbBtn.addEventListener("click", function() {
+    // //     alert("clicked!!!");
+    // // })
+
+    // jbBtn.addEventListener("click",onButtonClick)
+    // jbBtn.addEventListener("mouseover", onMouseOver);
+    // jbBtn.addEventListener("mouseout", onMouseOut);
+
+    // jbBtn.addEventListener("click",onButtonClick)
+    // 데이터 출력
+    // document.getElementById('result').innerText= value;
+
+  </script>
+
+</body>
+
+</html>

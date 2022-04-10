@@ -1,0 +1,16 @@
+{
+  "name": "webrtc-codelab",
+  "version": "0.0.1",
+  "description": "WebRTC codelab",
+  "dependencies": {
+    "express": "^4.17.3",
+    "node-static": "^0.7.10",
+    "serialport": "^10.3.0",
+    "socket.io": "^2.0.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index3.js"
+  }
+}

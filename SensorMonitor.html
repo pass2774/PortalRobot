@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<HTML>
+    <HEAD>
+        <title>Sensor Data</title>
+        <!-- <script language="javascript"type="text/javascript"> -->
+        <script type="text/javascript"
+        src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3"></script>
+        <script>
+            
+        var MaxDataLength=200;
+        // var DeviceID='MFCmonitor1';
+        var DeviceID='android_test';
+        var b_initiated = false;
+        var b_new_wsCmd = false;
+        var b_chart_streaming = true;
+//        var chart_startingTime = 0;
+        var inputCMD="";
+        var timestamp=new Date();
+
+        const MAX_DATA = 80;
+        const TIME_FORMAT = "YYYY-MM-DD hh:mm:ss";
+        const startDate = moment();
+        var KeyIdx=new Array();
+
+        let ctx = new Array();
+        let chart = new Array();
+        let field_params = new Array();
+
+        window.addEventListener("load", init, false);
+
+
+
+
+        function init() {
+            // wsinit();
+//            ctx[0] = document.getElementById("chart0");
+//            chart[0]=new InitChartParam(ctx[0]);
+
+        }
+
+        function myloop(){
+            setTimeout(async function testLoop() {
+                // const data = chart[0].data.datasets[0].data;
+
+                // if(b_new_wsCmd == true){
+                //     const wsCmdQuery= await fetch('websocketCmdQuery.php', {
+                //         method: "POST",
+                //         body: JSON.stringify({
+                //             DB_name: 'JoonhwaDB',
+                //             TB_name: 'UserWebSocketCMD',
+                //             device_ID: DeviceID,
+                //             wsCMD0: inputCMD,
+                //             wsCMD1: '',
+                //             wsCMD2: '',
+                //         }),
+                //     });
+                //     wsCmdQuery.json();
+                //     b_new_wsCmd=false;
+                // }
+
+                if(b_initiated == false){
+                    // strKey = "time,a,b,c,d"
+                    // KeyIdx = GetKeyIdx(strKey);
+                    // BuildCharts(ctx,chart,KeyIdx);
+                    // InitChartData(chart,KeyIdx);
+                    // UpdateChartLabels(strKey,chart,KeyIdx);
+                    // UpdateChartData(value.reverse(),chart,KeyIdx);
+                    console.log("loop init");
+                    b_initiated = true;
+                }else{
+                    console.log("loop update");
+                }
+                for(var i=0;i<KeyIdx.length;i++){
+                    chart[i].update();
+                }
+                setTimeout(testLoop,100)
+            }, 100);
+        }
+
+        function GetKeyIdx(arrKey){ //Under Construction.. 
+            // let TableKeys= Object.keys(inputTable[0]); //Extract 'column' key from the first row
+            // let TableKeys = strKey.split(',');
+            let TableKeys = arrKey;
+            if(TableKeys.length==5){
+                return [[1,2,3,4]];
+            }else if(TableKeys.length==4){
+                return [[1,2],[3]];
+            }else if(TableKeys.length==3){
+                return [[1,2]];
+            }else if(TableKeys.length==2){
+                return [[1]];
+            }else{
+                return [[1,2],[3,4]];
+            }
+        }
+        
+        function BuildCharts(ctx,chart,keyIdx){
+            for(var i=0;i<ctx.length;i++){
+                ctx[i].remove();
+            }
+            ctx.length=0;
+            //var body=document.getElementsByTagName("body")[0];
+            var body=document.getElementById("container");
+            var canvas;
+            for(var i=0;i<keyIdx.length;i++){
+                canvas=document.createElement('canvas');
+                canvas.id="chart"+String(i);
+                //canvas.width = 1000;
+                //canvas.height = 500;
+                //canvas.style.zIndex=8;
+                //canvas.style.position="absolute";
+                //canvas.style.border="1px solid";
+                body.appendChild(canvas);
+                ctx[i] = document.getElementById("chart"+String(i));
+                chart[i]=new InitChartParam(ctx[i]);
+                chart[i].options.title.text="Live Data CH "+String(i);
+
+            }
+            LocateControlPanel({top:500*keyIdx.length+100,left:20});
+            console.log("locateControlPanel");     
+        }
+        
+        function InitChartData(chart,keyIdx){
+            console.log("keyIdx::");     
+            console.log(keyIdx);     
+
+            for(var i=0;i<keyIdx.length;i++){
+                for(var j=0;j<keyIdx[i].length;j++){
+                    console.log("keyIdx:"+i+","+j);     
+                    chart[i].data.datasets[j]={
+                         label: "label0",
+                         borderColor: "black",
+                         fill: true,
+                         backgroundColor: 'rgba(200,200,200,0.2)',
+                         data: [],
+                         linetension: 0,
+                         pointRadius: 2,
+                         yAxisID: 'yAxisID_0',
+                    }
+                }
+            }
+        }
+        function UpdateChartLabels(arrKey,chart,keyIdx){
+            // let TableKeys= Object.keys(inputTable[0]); //Extract 'column' key from the first row
+            let TableKeys = arrKey;
+            for(var i=0;i<keyIdx.length;i++){
+                for(var j=0;j<keyIdx[i].length;j++){
+                    console.log("index_xx:"+i+","+j);
+                    chart[i].options.scales.yAxes[(j)%2].scaleLabel.labelString+="    # "+TableKeys[keyIdx[i][j]];
+                    chart[i].data.datasets[j].label=TableKeys[keyIdx[i][j]];
+                    console.log("index:"+i+","+j);
+                    if(j==0){
+                        chart[i].data.datasets[j].borderColor="red";
+                        chart[i].data.datasets[j].backgroundColor="rgba(400,200,200,0.2)";
+                    }else if(j==1){
+                        chart[i].data.datasets[j].borderColor="green"
+                        chart[i].data.datasets[j].backgroundColor="rgba(200,400,200,0.2)";
+                    }else if(j==2){
+                        chart[i].data.datasets[j].borderColor="blue"
+                        chart[i].data.datasets[j].backgroundColor="rgba(200,200,400,0.2)";
+                    }else{
+                        chart[i].data.datasets[j].borderColor="Orange"
+                        chart[i].data.datasets[j].backgroundColor="rgba(400,400,200,0.2)";
+                    }
+                }
+            }
+            console.log("UpdateChartLabels");     
+        }
+        function InitChartParam(ctx){
+            const TIME_FORMAT = "YYYY-MM-DD hh:mm:ss";
+            console.log("InitChartParam");     
+           return new Chart(ctx, {
+                type: "line",
+                data: {
+                    datasets: [{
+                        label: "label0",
+                        borderColor: "red",
+                        fill: true,
+                        backgroundColor: 'rgba(400,200,200,0.2)',
+                        data: [],
+                        linetension: 0,
+                        pointRadius: 2,
+                        yAxisID: 'yAxisID_0',
+                    },
+                    ]
+                },
+                
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    title: {
+                        display: true,
+                        text: ''
+                    },
+                    hover: {
+                        mode: "nearest",
+                        intersect: false,
+                    },
+                    tooltips: {
+                        mode: "nearest",
+                        intersect: false,
+                    },
+                    animation: {
+                        duration: 0
+                    },
+                    hover: {
+                        animationDuration: 0
+                    },
+                    responsiveAnimationDuration: 0,
+                    scales: {
+                        xAxes: [{
+                            type: 'time',
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Time'
+                            },
+                            time: {
+                               unit: "second",
+                               stepSize: 600,
+                               displayFormats: {
+                                    millisecond: TIME_FORMAT,
+                                    second: TIME_FORMAT,
+                                    minute: TIME_FORMAT,
+                                    hour: TIME_FORMAT,
+                                    day: TIME_FORMAT,
+                                    week: TIME_FORMAT,
+                                    month: TIME_FORMAT,
+                                    quarter: TIME_FORMAT,
+                                    year: TIME_FORMAT,
+                                }
+                            },
+                            ticks: {
+                                sampleSize: 10,
+                            }
+
+                        }],
+                        yAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: ''
+                            },
+                            ticks: {
+                                suggestedMin: 500,
+                                suggestedMax: 501,
+                                fontColor: 'red',
+                            },
+                            id: 'yAxisID_0',
+                            type: 'linear'
+                        },
+                        {
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: '',
+                                color: 'blue',
+                            },
+                            ticks: {
+                                //suggestedMin: 0.01,
+                                suggestedMin: 500,
+                                suggestedMax: 501,
+                                fontColor: 'blue',
+                            },
+                            id: 'yAxisID_1',
+                            type: 'linear',
+                            position: 'right',
+                            color: 'blue',
+                        }]
+                    }
+                }
+            });
+        }
+        function LocateControlPanel(position){
+            ctrlPanel=$('#controlPanel');
+            ctrlPanel.offset(position);
+        }
+
+        function UpdateChartDataSet(arrData,chart,KeyIdx){
+            // let TableKeys= Object.keys(inputTable[0]); //Extract 'column' key from the first row
+            // let arrData = strData.split(',');
+            console.log("graph update");  
+            console.log(arrData);  
+            for(var i=0;i<KeyIdx.length;i++){
+                for(var j=0;j<KeyIdx[i].length;j++){
+                    PushToChartDataSet(arrData,KeyIdx[i][j],chart[i].data.datasets[j].data);
+                }
+            }
+        }
+        function PushToChartDataSet(item,key,ChartData){
+            var jbSplit = item[key].split('/');
+            var jbData = jbSplit[1].split(':');
+            var i=0;
+            // var time = new Date(item['timestamp']);
+            var time = new Date(item[0]); // 0-th element of the 'item' is timestamp.
+            for (i=0;i<jbData.length;i++){
+                ChartData.push({
+                    x: time,
+                    y: jbData[i],
+                });
+                if (ChartData.length > MaxDataLength) {
+                    ChartData.shift();
+                };
+                time = new Date(time.getTime()+parseInt(jbSplit[0]));
+            }
+            console.log("PushToChartDataSet");     
+        }
+
+        function SetControlPanel_Fields(arrField, KeyIdx){
+            let TableKeys = arrField;
+            var mainPanel=document.getElementById("mainPanel");
+            var field_params_origin=document.getElementById("field_params")
+            for(var i=1;i<TableKeys.length;i++){
+                field_params[i]=field_params_origin.cloneNode(true);
+                field_params[i].getElementsByTagName('span')[0].innerText="Field "+String(i);
+                field_params[i].getElementsByTagName('span')[1].innerText=TableKeys[i];
+                field_params[i].setAttribute("id","fieldParams_"+String(i));
+                mainPanel.appendChild(field_params[i]);
+                // setComboToSelectOption(field_params[i].getElementsByTagName('select')[0],'graph_2');
+                // setComboToSelectOption(field_params[i].getElementsByTagName('select')[1],'Yaxis_left');
+            }
+            SetControlPanel_FieldParams(KeyIdx);
+            createTable(arrField);
+        }
+        function buildAxisPanel(arrChart) {
+            var axisPanel=document.getElementById("axisPanel");
+            var axisPanelUnit_format=document.getElementById("axisPanelUnit_format")
+            
+            for(var i=0;i<arrChart.length;i++){
+                for(var j=0;j<arrChart[i].options.scales.yAxes.length;j++){
+                    var axisPanelUnit=axisPanelUnit_format.cloneNode(true);
+                    axisPanelUnit.getElementsByTagName('span')[0].innerText=String(i);
+                    axisPanelUnit.getElementsByTagName('span')[1].innerText=String(j);
+                    axisPanelUnit.setAttribute("id","axisPanel_g"+String(i)+'a'+String(j))
+                    axisPanel.appendChild(axisPanelUnit);
+                }
+            }
+        }
+
+
+
+        function createTable(arrField) {
+            let table = document.createElement('table');
+            let thead = document.createElement('thead');
+            let tbody = document.createElement('tbody');
+
+            table.setAttribute("id","csvTable")
+            tbody.setAttribute("id","csvTable_body")
+            table.appendChild(thead);
+            table.appendChild(tbody);
+
+            // Adding the entire table to the body tag
+            document.getElementById("wsOutput").appendChild(table);
+            // document.getElementById("controlPanel").appendChild(table);
+
+            // Creating and adding data to first row of the table
+            let row_field = document.createElement('tr');
+
+            let heading = new Array();
+            for(var i=0;i<arrField.length;i++){
+                heading[i] = document.createElement('th');
+                heading[i].innerHTML = arrField[i];
+                row_field.appendChild(heading[i]);
+            }
+            thead.appendChild(row_field);
+        }
+        function updateTable(arrData) {
+            // Creating and adding data to second row of the table
+            row=document.createElement('tr');
+            for(var i=0;i<arrData.length;i++){
+                row_entry= document.createElement('td');
+                row_entry.innerHTML = arrData[i];
+                row.appendChild(row_entry);
+            }
+            let tbody = document.getElementById("csvTable_body");
+            tbody.appendChild(row);
+        }
+
+        function saveCSV(filename){
+            let downLink = document.createElement('a');
+            // let downLink = document.getElementById('download');
+            let csv = '';
+            let rows = document.querySelectorAll("#csvTable tr");
+        
+            for(var i=0; i < rows.length ; i++){
+                let cells = rows[i].querySelectorAll("td, th");
+                let row = [];
+                cells.forEach(function(cell){
+                    row.push(cell.innerHTML);
+                });
+                csv+= row.join(',') + (i !=rows.length-1 ? '\n':'');
+            }
+        
+            csvFile = new Blob([csv], {type: "text/csv"});
+            downLink.href = window.URL.createObjectURL(csvFile);
+            downLink.download = filename;
+
+            // Add the link to your DOM
+            document.body.appendChild(downLink);
+
+            // start the download
+            downLink.click();
+
+        }
+
+
+
+        // setComboToSelectOption : select 태그의 아이디와 option 태그의 아이디를 파라미터로 넘기면, 해당 option을 선택한다.
+        function setComboToSelectOption(comboObj, _itemValue) {
+            if (comboObj == null) {
+                return false;
+            }
+            if (comboObj.options == null || comboObj.options.length == 0) {
+                return false;
+            }
+            if (_itemValue == null) {
+                _itemValue = "";
+            }
+            var optionCount = comboObj.options.length;
+            for (var i=0; i<optionCount; i++) {
+                if (comboObj.options[i].value == _itemValue) {
+                    comboObj.options[i].selected = true;
+                    return true;
+                }
+            }
+                
+            return false;
+        }
+
+        function SetControlPanel_FieldParams(keyIdx){
+            for(var i=0;i<keyIdx.length;i++){
+                for(var j=0;j<keyIdx[i].length;j++){
+                    field_selects=field_params[keyIdx[i][j]].getElementsByTagName('select');
+                    setComboToSelectOption(field_selects[0],'graph_'+String(i+1));
+                    // setComboToSelectOption(field_selects[1],'Yaxis_right');
+                }
+            }
+        }
+
+        var wsUri ="ws://147.46.241.33:6716";
+        var wsOutput;
+        function wsinit() {
+            wsOutput = document.getElementById("wsOutput");
+            testWebSocket();
+        }
+        function testWebSocket() {
+            websocket = new WebSocket(wsUri);
+            websocket.onopen = function(evt) {
+                onOpen(evt)
+            };
+            websocket.onclose = function(evt) {
+                onClose(evt)
+            };
+            websocket.onmessage = function(evt) {
+                onMessage(evt)
+            };
+            websocket.onerror = function(evt) {
+                onError(evt)
+            };
+        }
+        function onOpen(evt) {
+            writeToScreen("CONNECTED");
+            // wsSend("DRQ,android_test,hello!");
+            wsSend("DRQ,"+DeviceID+",hello!");
+            myloop();
+            console.log("myloop")
+        }
+        function onClose(evt) {
+            writeToScreen("DISCONNECTED");
+        }
+        function onMessage(evt) {
+            writeToScreen('<span style="color: blue;">RESPONSE: '+ evt.data+'</span>');
+            const arrData =  evt.data.split(',');
+            const header = arrData.shift();
+            if(header!="ECHO"){
+                if(header=="KEYS"){
+                    // console.log(arrData);
+                    KeyIdx = GetKeyIdx(arrData); // delete the header
+                    SetControlPanel_Fields(arrData,KeyIdx)    
+                    console.log("Keyidx=");  
+                    console.log(KeyIdx);  
+                    BuildCharts(ctx,chart,KeyIdx);
+                    InitChartData(chart,KeyIdx);
+                    console.log(arrData);  
+                    UpdateChartLabels(arrData,chart,KeyIdx);
+                    console.log("UpdateChartLabels done");  
+                    buildAxisPanel(chart);
+                }else if(header=="DAT"){
+                    UpdateChartDataSet(arrData,chart,KeyIdx);
+                    updateTable(arrData);
+                }
+            }
+            // UpdateChartDataSet("2021-09-25 02:01:59.798000,20/423:423:422:421:420,1000/423,1000/423",chart,KeyIdx);
+            // websocket.close();
+        }
+        function onError(evt) {
+            writeToScreen('<span style="color: red;">ERROR:</span> '+ evt.data);
+        }
+        function wsSend(message) {
+            writeToScreen("SENT: " + message);
+            websocket.send(message);
+        }
+        function writeToScreen(message) {
+            var pre = document.createElement("p");
+            pre.style.wordWrap = "break-word";
+            pre.innerHTML = message;
+            wsOutput.appendChild(pre);
+        }
+        function setAxisParams(graph_idx,axis_idx,min,max) {
+            if(min!=null && min !=NaN){
+                chart[graph_idx].options.scales.yAxes[axis_idx].ticks.min=min;
+            }
+            if(max!=null && max !=NaN){
+               chart[graph_idx].options.scales.yAxes[axis_idx].ticks.max=max;
+            }
+        }
+
+
+
+        </script>
+        <style>
+          div.graph {
+            width: 100%;
+            /*height: 500px;*/
+            border: 1px solid #003458;
+          }
+          div.y-axis-1 {
+            width: 30%;
+            float: left;
+            box-sizing: border-box;
+            background: #ecfce6;
+          }
+          div.y-axis-2 {
+            width: 70%;
+            float: right;
+            box-sizing: border-box;
+            background: #fce6ec;
+          }
+          div.x-axis{
+            width: 100%;
+            border: 1px solid #003458;
+            background: #fafafa;
+          }
+          div.device-control{
+            width: 100%;
+            border: 1px solid #003458;
+            background: #fafafa;
+          }
+
+            table{
+                border-collapse: collapse;
+                border-spacing: 0;
+            }
+            th, td{
+                padding: 10px 20px;
+                border: 1px solid #000;
+            }
+
+
+        </style>
+    </HEAD>
+    
+    <BODY>
+        <div id="header">
+            <h2 style="background-color:lightgrey; color:white; text-align:center">Live Sensor DB</h2>
+        </div>
+        
+        <!-- <form id="sampleForm" name="sampleForm" action="/DBdownloading3.html" method="post">
+            <input type="hidden" id="hiddenField" name='DeviceID' value=''> -->
+            <button onclick='mySubmit()'  >Download test</button>
+        </form>
+
+        <div class="graph">
+            <div id="container" style="min-width: 728px; height: 400px; margin: 0 auto">
+                <canvas id="chart0"></canvas>
+            </div>
+            Graph domain
+        </div>
+
+
+        <div id="controlPanel">
+            <h2 style="background-color:lightgrey; color:white; text-align:center">Control Panel</h2>
+            <div id="mainPanel">
+                <input type="text" id="input_DeviceID" placeholder="android_test(default)">
+                <button onclick="input_DeviceID()">Apply</button><br>
+                <div id="field_params">
+                    <span style="display:inline-block; text-align:center ;width:80px; margin: 5px; background-color:#eaeafa" name='fieldIdx'>Field index</span>
+                    <span style="display:inline-block; text-align:center ;width:100px; margin: 5px; background-color:#eaeafa" name='fieldName'>Field Name</span>
+                    <select name="graphIdx" onchange="handleOnFieldParamChange(this)">
+                      <option value="graph_1">Graph 1</option>
+                      <option value="graph_2">Graph 2</option>
+                      <option value="graph_3">Graph 3</option>
+                    </select>
+                    <select name="YaxisIdx" onchange="handleOnFieldParamChange(this)">
+                      <option value="Yaxis_left">left y-axis</option>
+                      <option value="Yaxis_right">right y-axis</option>
+                    </select>
+                </div>
+            </div>
+            <!-- <div class="Axis-setting-chart0"> -->
+            <div id="axisPanel">
+                <b>Axis Panel</b>
+                <button onclick="onclickSetAxisParams(chart)">Set Y-axis</button><br> 
+                <span style="display:inline-block; text-align:center ;width:100px; margin: 5px; background-color:#dacaea" >Graph index</span>
+                <span style="display:inline-block; text-align:center ;width:100px; margin: 5px; background-color:#dacaea">Y axis index</span>
+                <span style="display:inline-block; text-align:center ;width:100px; margin: 5px; background-color:#dacaea">Min</span>
+                <span style="display:inline-block; text-align:center ;width:100px; margin: 5px; background-color:#dacaea">Max</span>
+                <div id="axisPanelUnit_format">
+                    <span style="display:inline-block; text-align:center ;width:100px; margin: 5px; background-color:#eaeafa" name='graphIdx'> g_idx</span>
+                    <span style="display:inline-block; text-align:center ;width:100px; margin: 5px; background-color:#eaeafa" name='yAxisIdx'>ya_idx</span>
+                    <input style="text-align:center ;width:90px; margin: 7px;" type="text" name="ya_min" placeholder="default:0">
+                    <input style="text-align:center ;width:90px; margin: 7px;" type="text" name="ya_max" placeholder="default:1000">
+                </div>  
+            </div>
+            <div class="x-axis">
+                <b>x-axis</b><br>
+                MaxDataLength =
+                <input type="text" id="input_MaxDataLength" placeholder="200(default)">
+                <button onclick="input_MaxDataLength()">Apply</button><br>
+          
+                Starting time =
+                <input type="text" id="input_StartingTime" placeholder="??(default)">
+                <button onclick="input_StartingTime()">Apply</button><br>
+                <textarea id="output"></textarea>
+                <button onclick="output()">Chart Streaming</button><br>
+            </div>
+            <div class="device-control">
+                <b>Device & DB control</b><br>
+                <input type="text" id="input_InitTable" placeholder="Enter PW to DELETE data. Cannot be undone. ">
+                <!-- <a href="#" onclick="input_InitTable()">Initialize data</button></a><br> -->
+                <button onclick="input_InitTable()">Initialize Data</button><br>
+                websocket command0 =
+                <input type="text" id="input_wsCMD0" placeholder="update_interval=?,dac_output0=?,dac_relay_enable0=?">
+                <button onclick="input_wsCMD0()">Transmit CMD</button><br>
+
+                <input type="text" id="input_label" placeholder="label">
+                <button onclick="input_wsCMD0()">Set Label</button><br>
+            </div>
+
+            <h2>Realtime Streaming</h2>
+            <div id="VideoSream"></div>
+    <!--         <img style="-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 25%);" src="http://192.168.0.14:8081/"> -->
+<!--             <img style="-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 25%);" src="http://183.101.165.52:6776/">
+ -->
+            <img style="-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 25%);" src="http://192.168.0.18:8081/">
+            <h2>WebSocket Test</h2>
+            <div id="wsOutput"></div>
+            </table>
+
+
+
+
+        </div>
+
+        <script type="text/javascript">
+        function handleOnFieldParamChange(e) {
+            // 선택된 데이터 가져오기
+            // const value = e.value;
+            // var i=1;
+            // var field_params=document.getElementById("field_params_"+string(i))          ;
+          
+            var field_params=e.parentNode.id;
+            field_idx=Number(field_params.split("_")[1]);
+            console.log("field idx=");
+            console.log(field_idx);
+            if(e.name=="graphIdx"){
+                console.log("graph moved to=");
+                console.log(e.value);
+            }
+            if(e.name=="YaxisIdx"){
+                console.log("y axis moved to=");
+                console.log(e.value);
+            }
+
+            // 데이터 출력
+            // document.getElementById('result').innerText= value;
+        }
+
+        function mySubmit(){
+            // document.sampleForm.hiddenField.value = DeviceID
+            // document.forms("sampleForm").submit();
+
+            saveCSV("sensor_data.csv");
+
+        }
+        function input_DeviceID(){
+            var input = document.getElementById("input_DeviceID").value;
+            DeviceID = input;
+            b_initiated = false;
+            wsinit();
+        }
+        function input_MaxDataLength(){
+            var input = document.getElementById("input_MaxDataLength").value;
+            MaxDataLength = input;
+            b_initiated = false;
+        }
+        function input_StartingTime(){
+            var input = document.getElementById("input_StartingTime").value;
+//            chart_startingTime = 0;
+            b_initiated = false;
+        }
+        function input_wsCMD0(){
+            var input = document.getElementById("input_wsCMD0").value;
+            inputCMD=input;
+            b_new_wsCmd=true;
+        }
+        
+        function input_InitTable(){
+            var input = document.getElementById("input_InitTable").value;
+            if(input=="01234"){
+                if(confirm("Are you sure??")){
+                    $.ajax({
+                       type: "POST",
+                       url: 'DeleteTableQuery.php',
+                       data:{
+                           DB_name: 'JoonhwaDB',
+                           TB_name: DeviceID,
+                       },
+                       success:function(html){
+                            alert("DB initiated!");
+                            alert(html);
+                       }
+                    });
+                }else{
+                    
+                }
+            }else{
+                alert("Wrong password!");
+            }
+//            b_initiated = false;
+        }
+
+        function output(){
+//            document.getElementById("output").value = MaxDataLength;
+            b_chart_streaming=!b_chart_streaming;
+        }
+
+        function onclickSetAxisParams(arrChart){
+            var min,max;
+            for(var i=0;i<arrChart.length;i++){
+                for(var j=0;j<arrChart[i].options.scales.yAxes.length;j++){
+                    var axisPanelUnit=document.getElementById("axisPanel_g"+String(i)+'a'+String(j));
+                    var str_min = axisPanelUnit.getElementsByTagName('input')[0].value;
+                    var str_max = axisPanelUnit.getElementsByTagName('input')[1].value;
+                    if(str_min!=""){
+                        min = Number(str_min);
+                    }else{
+                        min=null;
+                    }
+                    if(str_max!=""){
+                        max = Number(str_max);
+                    }else{
+                        max=null;
+                    }
+                    setAxisParams(i,j,min,max); //((graph_idx,axis_idx,min,max))
+                }
+            }
+        }
+
+    </script>
+    </BODY>
+</HTML>
